@@ -102,17 +102,13 @@ for i in $(EIX_LIMIT=0 eix '-I*' --format '<installedversions:NAMEVERSION>'); do
 
     f="/var/db/pkg/$i/environment.bz2"
     h="/var/db/pkg/$i/INHERITED"
-    e="$(echo ${i} | sed -r 's~([^/]+)/([^/]+)-([0-9\-\.]+r?[0-9]?)~/usr/portage/\1/\2/\2-\3~g')"
-    e="$e.ebuild"
-    pkg="=$i"
-
     if [[ -f ${f} && -f ${h} ]]; then
         if grep -q linux-info ${h}; then
             flags=$(bzcat ${f} | perl -e "${script}")
 
             if ! bzgrep -q "declare -- CONFIG_CHECK=[\"']" ${f} && \
                  bzgrep -qE "local\s+CONFIG_CHECK=[\"']" ${f}; then
-                warning_packages+=(${pkg})
+                warning_packages+=(${i})
             fi
 
             for flag in ${flags}; do
@@ -137,9 +133,9 @@ for read_cmd in "file grep ${conf_file}" "mem zgrep ${conf_mem}"; do
     done
 done
 
-printf "\b \b\n"
+printf "\b \n"
 for pkg in ${warning_packages[@]}; do
-    echo "  WARNING: may produce inaccurate result for $pkg"
+    echo "  WARNING: may produce inaccurate result for =$pkg"
 done
 
 if [[ ${#affected_packages[@]} == 0 ]]; then
@@ -168,7 +164,7 @@ for conf in "file ${conf_file}" "mem ${conf_mem}"; do
 done
 
 echo
-echo "You may run next commands to re-check:"
+echo "You may run next commands to validate result:"
 for package in ${affected_packages[@]}; do
-    echo "  ebuild $package clean setup clean"
+    echo "  ebuild $(ebuild ${package}) clean setup clean"
 done
